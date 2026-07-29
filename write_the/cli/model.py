@@ -1,4 +1,5 @@
 import typer
+import requests
 import json
 from pathlib import Path
 
@@ -33,3 +34,24 @@ def set_default_model(model: str):
     config["default_model"] = model
     with open(config_path, "w") as f:
         json.dump(config, f)
+
+def fetch_openrouter_models(
+        url: str = "https://openrouter.ai/api/v1/models",
+        api_key: str | None = None,
+        timeout: float = 30.0,
+    ):
+    """Fetch model metadata from OpenRouter and return a dict keyed by model ID."""
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    response = requests.get(url, headers=headers, timeout=59)
+    response.raise_for_status()
+
+    payload = response.json()
+    try:
+        data = payload["data"]
+    except KeyError as e:
+        raise ValueError(f"Unexpected API response: missing 'data' key. Keys: {list(payload.keys())}") from e
+
+    return {m["id"]: m for m in data if "id" in m}
