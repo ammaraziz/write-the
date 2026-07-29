@@ -1,9 +1,9 @@
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
+from langchain_openai import OpenAI, ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
 import tiktoken
 from .models import models
+
 
 class LLM:
     """
@@ -28,6 +28,7 @@ class LLM:
         self.prompt_size = self.number_of_tokens(prompt.template)
         self.temperature = temperature
         self.model_name = model_name
+
         try:
             self.max_tokens = int(models[model_name]["context_window"])
         except KeyError:
@@ -56,8 +57,10 @@ class LLM:
             llm = ChatOpenAI(
                 temperature=self.temperature, model_name=self.model_name
             )
-        chain = LLMChain(llm=llm, prompt=self.prompt)
-        return await chain.apredict(code=code, **kwargs)
+
+        # LCEL: compose prompt → llm → output parser instead of LLMChain
+        chain = self.prompt | llm | StrOutputParser()
+        return await chain.ainvoke({"code": code, **kwargs})
 
     def number_of_tokens(self, text):
         """
