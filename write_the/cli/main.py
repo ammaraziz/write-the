@@ -30,7 +30,7 @@ class AsyncTyper(typer.Typer):
         return decorator
 
 
-app = AsyncTyper()
+app = AsyncTyper(no_args_is_help=True)
 
 def _get_model_callback(value: str):
     if value is None:
